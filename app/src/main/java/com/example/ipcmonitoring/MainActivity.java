@@ -32,9 +32,7 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
-    private BroadcastReceiver dynamicReceiver;
-
-    private ArrayList<String> intents = new ArrayList<String>() {{
+    private final ArrayList<String> intents = new ArrayList<String>() {{
         add(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
         add(Intent.ACTION_NEW_OUTGOING_CALL);
         add(Intent.ACTION_MEDIA_MOUNTED);
@@ -42,7 +40,16 @@ public class MainActivity extends AppCompatActivity {
         add(Intent.ACTION_LOCKED_BOOT_COMPLETED);
         add(Intent.ACTION_USER_PRESENT);
         add(Telephony.Sms.Intents.SMS_RECEIVED_ACTION);
+    }};
 
+    private final HashMap<String, String> intentDescriptions = new HashMap<String, String>() {{
+        put(TelephonyManager.ACTION_PHONE_STATE_CHANGED, "This broadcast is sent when the phone state changes, such as when a call is incoming, outgoing, or ended.");
+        put(Intent.ACTION_NEW_OUTGOING_CALL, "This broadcast is sent when the user initiates a new outgoing call.");
+        put(Intent.ACTION_MEDIA_MOUNTED, "This broadcast is sent when a new external storage volume, such as an SD card, is mounted.");
+        put(Intent.ACTION_BOOT_COMPLETED, "This broadcast is sent when the device finishes booting.");
+        put(Intent.ACTION_LOCKED_BOOT_COMPLETED, "This broadcast is sent after the user has finished booting, but while still in the locked state.");
+        put(Intent.ACTION_USER_PRESENT, "This broadcast is sent when the user unlocks the device or enters the home screen.");
+        put(Telephony.Sms.Intents.SMS_RECEIVED_ACTION, "This broadcast is sent when a new text-based SMS message has been received by the device.");
     }};
 
     @Override
@@ -50,47 +57,52 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        dynamicReceiver = new BroadcastReceiver() {
-//            @Override
-//            public void onReceive(Context context, Intent intent) {
-//                if (intent.getAction().equals(TelephonyManager.ACTION_PHONE_STATE_CHANGED)) {
-//                    Log.d("IPCMonitor", "onReceive: " + intent.getAction());
-//                } else if (intent.getAction().equals(Intent.ACTION_NEW_OUTGOING_CALL)) {
-//                    Log.d("IPCMonitor", "onReceive: " + intent.getAction());
-//                } else if (intent.getAction().equals(Intent.ACTION_MEDIA_MOUNTED)) {
-//                    Log.d("IPCMonitor", "onReceive: " + intent.getAction());
-//                } else if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) {
-//                    Log.d("IPCMonitor", "onReceive: " + intent.getAction());
-//                } else if (intent.getAction().equals(Intent.ACTION_LOCKED_BOOT_COMPLETED)) {
-//                    Log.d("IPCMonitor", "onReceive: " + intent.getAction());
-//                } else if (intent.getAction().equals(Intent.ACTION_USER_PRESENT)) {
-//                    Log.d("IPCMonitor", "onReceive: " + intent.getAction());
-//                } else if (intent.getAction().equals(Telephony.Sms.Intents.SMS_RECEIVED_ACTION)) {
-//                    Log.d("IPCMonitor", "onReceive: " + intent.getAction());
-//                }
-//            }
-//        };
-
-        // Register the dynamic BroadcastReceiver with the intent filter object
-        IntentFilter intentFilter = new IntentFilter();
-        for(String intentString: intents) {
-            intentFilter.addAction(intentString);
-        }
-
         Map<String, ArrayList<String>> map = getBroadcastReceivers(getApplicationContext(), intents);
         for(String app: map.keySet()) {
-            Log.d("IPCMonitor", "onCreate: " + app + " " + map.get(app));
+            String logMsg = app + " has the following receivers:";
+            for(String receiver: map.get(app)) {
+                logMsg += "\n\t" + receiver;
+                logMsg += "\n\t\t" + intentDescriptions.get(receiver);
+            }
+            Log.d("MainActivity", logMsg);
         }
 
     }
 
-    @Override
-    protected void onDestroy() {
-        // Unregister the dynamic BroadcastReceiver when the activity is destroyed
-        if (dynamicReceiver != null) {
-            unregisterReceiver(dynamicReceiver);
+    public static Map<String, ArrayList<String>> getBroadcastReceivers(Context context, List<String> intents) {
+        List<PackageInfo> thirdPartyApps = getThirdPartyApps(context);
+        Map<String, ArrayList<String>> map = new HashMap<>();
+
+        for(PackageInfo packageInfo: thirdPartyApps) {
+            ArrayList<String> receivers = new ArrayList<>();
+            for(String intentString: intents) {
+                if(hasBroadcastReceiver(context, packageInfo.packageName, intentString)) {
+                    receivers.add(intentString);
+                }
+            }
+            if(receivers.size() > 0) {
+                String appLabel = context.getPackageManager().getApplicationLabel(packageInfo.applicationInfo).toString();
+                map.put(appLabel, receivers);
+            }
         }
-        super.onDestroy();
+        return map;
+    }
+
+
+    public static List<PackageInfo> getThirdPartyApps(Context context) {
+        List<PackageInfo> thirdPartyApps = new ArrayList<>();
+
+        PackageManager packageManager = context.getPackageManager();
+        List<PackageInfo> installedPackages = packageManager.getInstalledPackages(0);
+
+        for (PackageInfo packageInfo : installedPackages) {
+            // skip system apps
+            if ((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
+                thirdPartyApps.add(packageInfo);
+            }
+        }
+
+        return thirdPartyApps;
     }
 
     public static boolean hasBroadcastReceiver(Context context, String packageName, String intentString) {
@@ -100,41 +112,5 @@ public class MainActivity extends AppCompatActivity {
 
         // Query the package manager to see if the receiver exists
         return pm.queryBroadcastReceivers(intent, 0).size() > 0;
-    }
-
-    public static Map<String, ArrayList<String>> getBroadcastReceivers(Context context, List<String> intents) {
-        List<String> thirdPartyApps = getThirdPartyApps(context);
-        Map<String, ArrayList<String>> map = new HashMap<>();
-
-        for(String packageName: thirdPartyApps) {
-            ArrayList<String> receivers = new ArrayList<>();
-            for(String intentString: intents) {
-                if(hasBroadcastReceiver(context, packageName, intentString)) {
-//                    Log.d("IPCMonitor", "getBroadcastReceivers: " + app + " " + intentString);
-                    receivers.add(intentString);
-                }
-            }
-            if(receivers.size() > 0) {
-                map.put(packageName, receivers);
-            }
-        }
-        return map;
-    }
-
-
-    public static List<String> getThirdPartyApps(Context context) {
-        List<String> thirdPartyApps = new ArrayList<>();
-
-        PackageManager packageManager = context.getPackageManager();
-        List<PackageInfo> installedPackages = packageManager.getInstalledPackages(0);
-
-        for (PackageInfo packageInfo : installedPackages) {
-            // skip system apps
-            if ((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
-                thirdPartyApps.add(packageInfo.packageName);
-            }
-        }
-
-        return thirdPartyApps;
     }
 }
