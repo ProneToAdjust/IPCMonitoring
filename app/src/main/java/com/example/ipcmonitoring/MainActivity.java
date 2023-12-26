@@ -1,31 +1,18 @@
 package com.example.ipcmonitoring;
 
-import android.app.ActivityManager;
-import android.app.usage.UsageEvents;
-import android.app.usage.UsageStats;
-import android.app.usage.UsageStatsManager;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.provider.Telephony;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
