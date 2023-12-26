@@ -36,7 +36,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         Map<String, ArrayList<String>> map = getBroadcastReceivers(getApplicationContext(), intents.keySet());
+
+        // log the apps that have a broadcast receiver for each intent and the intent's description
         for(String app: map.keySet()) {
             String logMsg = app + " has the following receivers:";
             for(String receiver: map.get(app)) {
