@@ -16,20 +16,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
-    private final ArrayList<String> intents = new ArrayList<String>() {{
-        add(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
-        add(Intent.ACTION_NEW_OUTGOING_CALL);
-        add(Intent.ACTION_MEDIA_MOUNTED);
-        add(Intent.ACTION_BOOT_COMPLETED);
-        add(Intent.ACTION_LOCKED_BOOT_COMPLETED);
-        add(Intent.ACTION_USER_PRESENT);
-        add(Telephony.Sms.Intents.SMS_RECEIVED_ACTION);
-    }};
-
-    private final HashMap<String, String> intentDescriptions = new HashMap<String, String>() {{
+    private final HashMap<String, String> intents = new HashMap<String, String>() {{
         put(TelephonyManager.ACTION_PHONE_STATE_CHANGED, "This broadcast is sent when the phone state changes, such as when a call is incoming, outgoing, or ended.");
         put(Intent.ACTION_NEW_OUTGOING_CALL, "This broadcast is sent when the user initiates a new outgoing call.");
         put(Intent.ACTION_MEDIA_MOUNTED, "This broadcast is sent when a new external storage volume, such as an SD card, is mounted.");
@@ -44,19 +35,19 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Map<String, ArrayList<String>> map = getBroadcastReceivers(getApplicationContext(), intents);
+        Map<String, ArrayList<String>> map = getBroadcastReceivers(getApplicationContext(), intents.keySet());
         for(String app: map.keySet()) {
             String logMsg = app + " has the following receivers:";
             for(String receiver: map.get(app)) {
                 logMsg += "\n\t" + receiver;
-                logMsg += "\n\t\t" + intentDescriptions.get(receiver);
+                logMsg += "\n\t\t" + intents.get(receiver);
             }
             Log.d("MainActivity", logMsg);
         }
 
     }
 
-    public static Map<String, ArrayList<String>> getBroadcastReceivers(Context context, List<String> intents) {
+    public static Map<String, ArrayList<String>> getBroadcastReceivers(Context context, Set<String> intents) {
         List<PackageInfo> thirdPartyApps = getThirdPartyApps(context);
         Map<String, ArrayList<String>> map = new HashMap<>();
 
