@@ -20,6 +20,7 @@ import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
+    // map of intents to their descriptions
     private final HashMap<String, String> intents = new HashMap<String, String>() {{
         put(TelephonyManager.ACTION_PHONE_STATE_CHANGED, "This broadcast is sent when the phone state changes, such as when a call is incoming, outgoing, or ended.");
         put(Intent.ACTION_NEW_OUTGOING_CALL, "This broadcast is sent when the user initiates a new outgoing call.");
@@ -47,10 +48,12 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    // get a map of all third party apps and the intents they have a broadcast receiver for
     public static Map<String, ArrayList<String>> getBroadcastReceivers(Context context, Set<String> intents) {
         List<PackageInfo> thirdPartyApps = getThirdPartyApps(context);
         Map<String, ArrayList<String>> map = new HashMap<>();
 
+        // for each third party app, check if it has a broadcast receiver for each intent
         for(PackageInfo packageInfo: thirdPartyApps) {
             ArrayList<String> receivers = new ArrayList<>();
             for(String intentString: intents) {
@@ -58,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
                     receivers.add(intentString);
                 }
             }
+            // if the app has a broadcast receiver for at least one intent, add it to the map
             if(receivers.size() > 0) {
                 String appLabel = context.getPackageManager().getApplicationLabel(packageInfo.applicationInfo).toString();
                 map.put(appLabel, receivers);
@@ -67,12 +71,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    // get PackageInfo for all third party apps
     public static List<PackageInfo> getThirdPartyApps(Context context) {
         List<PackageInfo> thirdPartyApps = new ArrayList<>();
 
         PackageManager packageManager = context.getPackageManager();
         List<PackageInfo> installedPackages = packageManager.getInstalledPackages(0);
 
+        // for each installed package, check if it is a third party app
         for (PackageInfo packageInfo : installedPackages) {
             // skip system apps
             if ((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
@@ -83,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
         return thirdPartyApps;
     }
 
+    // check if the app has a broadcast receiver for the given intent
     public static boolean hasBroadcastReceiver(Context context, String packageName, String intentString) {
         PackageManager pm = context.getPackageManager();
         Intent intent = new Intent(intentString);
